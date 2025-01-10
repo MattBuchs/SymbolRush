@@ -1,21 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function Home() {
     const [cards, setCards] = useState([]);
+    const [cardsDisplayed, setCardsDisplayed] = useState([]);
     const [symbols, setSymbols] = useState([]);
     const [error, setError] = useState(null);
-    const [cardsFound, setCardsFound] = useState(0);
+    const [cardsIndex, setCardsIndex] = useState(3);
+    const [nbSymbolPerCard, setNbSymbolPerCard] = useState({
+        nb: 3,
+        class: "text-4xl",
+    });
+    const [animatedCard, setAnimatedCard] = useState(null); // Carte animée (index)
+    const [animatedCard2, setAnimatedCard2] = useState(false); // Carte animée (index)
 
     // Mélange les cartes et les symboles
     const shuffle = (array) => {
-        const newArray = array.sort(() => Math.random() - 0.5);
-        newArray.map((card) => {
-            card.sort(() => Math.random() - 0.5);
-        });
-
-        return newArray;
+        const newArray = [...array];
+        newArray.forEach((card) => card.sort(() => Math.random() - 0.5));
+        return newArray.sort(() => Math.random() - 0.5);
     };
 
     // Obtiens des symboles aléatoires sans répétition
@@ -34,14 +38,32 @@ export default function Home() {
         return symbolsArr;
     };
 
-    const checkIsGoodSymbol = (e, index, indexSymbol) => {
-        const symbol = e.target.textContent;
-        const isGoodSymbol = cards[index - 1].includes(symbol);
+    const handleCheckSymbol = useCallback(
+        (e) => {
+            const symbol = e.target.textContent;
+            const isGoodSymbol = cards[cardsIndex - 3].includes(symbol);
 
-        if (isGoodSymbol) {
-            setCardsFound(index);
-        }
-    };
+            if (isGoodSymbol) {
+                setAnimatedCard(1); // Déclenche l'animation pour la carte à index 1
+                setAnimatedCard2(true); // Déclenche l'animation pour la carte à index 2
+                setTimeout(() => {
+                    setCardsDisplayed((prevCardsDisplayed) => {
+                        const newCardsDisplayed = [...prevCardsDisplayed];
+
+                        if (cards[cardsIndex])
+                            newCardsDisplayed.push(cards[cardsIndex]);
+                        newCardsDisplayed.shift();
+
+                        return newCardsDisplayed;
+                    });
+                    setCardsIndex(cardsIndex + 1);
+                    setAnimatedCard(null); // Réinitialise après l'animation
+                    setAnimatedCard2(false); // Réinitialise après l'animation
+                }, 500); // Temps de l'animation (en ms)
+            }
+        },
+        [cards, cardsIndex]
+    );
 
     useEffect(() => {
         // Récupére les symboles depuis un fichier JSON
@@ -68,8 +90,8 @@ export default function Home() {
 
         const generateSymbolCards = (symbolsPerCard) => {
             try {
-                const n = symbolsPerCard - 1; // n est basé sur le nombre de symboles par carte - 1
-                const totalCards = n * n + n + 1; // Nombre total de cartes
+                const n = symbolsPerCard - 1;
+                const totalCards = n * n + n + 1;
                 const randomSymbols = getRandomSymbol(totalCards);
 
                 if (symbols.length < totalCards) {
@@ -114,56 +136,73 @@ export default function Home() {
         };
 
         // Générer les cartes avec 3 symboles par carte
-        const cardsGenerated = generateSymbolCards(8);
+        const cardsGenerated = generateSymbolCards(nbSymbolPerCard.nb);
 
         if (!cardsGenerated) return;
 
         const shuffleCards = shuffle(cardsGenerated);
         setCards(shuffleCards);
+        setCardsDisplayed([shuffleCards[0], shuffleCards[1], shuffleCards[2]]);
     }, [symbols]);
 
     return (
-        <div className="bg-slate-600 min-h-screen p-4">
+        <div className="bg-slate-600 h-screen overflow-hidden p-4">
             <h1 className="text-4xl text-slate-50 font-semibold text-center mt-3 mb-12">
                 SymbolRush
             </h1>
             {!error && cards && (
                 <ul className="flex flex-wrap justify-center gap-4">
-                    {cards.map((card, index) => (
+                    {cardsDisplayed.map((card, index) => (
                         <li
                             key={index}
-                            className="w-[300px] h-[300px] flex justify-center items-center flex-wrap gap-1 p-4 rounded-lg bg-slate-50 border border-black shadow-md absolute"
+                            className={`absolute left-1/2 w-[300px] h-[300px] -translate-x-1/2 -translate-y-1/2 perspective-[2000px] perspective-origin-top ${
+                                index <= 1 ? "z-10" : "z-0"
+                            } ${
+                                animatedCard === index ? "animate-move-up" : ""
+                            }`}
                             style={{
-                                top: `${index <= cardsFound ? "30%" : "75%"}`,
-                                left: `50%`,
-                                transform: `translate(-50%, -50%)`,
-                                zIndex: `${
-                                    index > cardsFound
-                                        ? cards.length - index
-                                        : index
-                                }`,
+                                top: `${index <= 0 ? "30%" : "75%"}`,
                             }}
                         >
-                            {card.map((symbol, indexSymbol) => (
-                                <button
-                                    key={`${index}-${indexSymbol}`}
-                                    onClick={(e) => {
-                                        checkIsGoodSymbol(
-                                            e,
-                                            index,
-                                            indexSymbol
-                                        );
-                                    }}
-                                    disabled={index <= cardsFound}
-                                    className={`text-[3.5rem] transition-transform${
-                                        index > cardsFound
-                                            ? " hover:scale-[0.93] hover:opacity-85"
+                            <div
+                                className={`relative w-full h-full shadow-md transform-style-3d transition-transform duration-500 ${
+                                    animatedCard2
+                                        ? index > 1
+                                            ? "animate-rotateCard"
                                             : ""
-                                    }`}
-                                >
-                                    {symbol}
-                                </button>
-                            ))}
+                                        : ""
+                                }`}
+                                style={{
+                                    transform: `translate(${
+                                        index <= 1 ? 0 : 3
+                                    }px)`,
+                                }}
+                            >
+                                <div className="bg-slate-50 w-full h-full flex justify-center items-center flex-wrap gap-1 p-4 rounded-lg border border-black absolute backface-hidden">
+                                    {card.map((symbol, indexSymbol) => (
+                                        <button
+                                            key={`${index}-${indexSymbol}`}
+                                            onClick={(e) =>
+                                                handleCheckSymbol(e)
+                                            }
+                                            disabled={index <= 0}
+                                            className={`${
+                                                nbSymbolPerCard.class
+                                            } transition-transform${
+                                                index > 0
+                                                    ? " hover:scale-[0.93] hover:opacity-85"
+                                                    : ""
+                                            }`}
+                                        >
+                                            {(index <= 1 && symbol) ||
+                                                (animatedCard2 && symbol)}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="w-full h-full absolute backface-hidden rotate-y-180 bg-slate-300 rounded-lg border border-black p-3">
+                                    <div className="w-full h-full bg-[url('/img/symbolrush.png')] bg-cover"></div>
+                                </div>
+                            </div>
                         </li>
                     ))}
                 </ul>
