@@ -15,11 +15,15 @@
         scale: 0.9;
     }
     100% {
-        top: 30%;
+        top: 25%;
         transform: translate(0) rotateZ(360deg);
         opacity: 1;
         scale: 1;
     }
+}
+
+.animate-move-up {
+    animation: moveUp 0.6s ease-out forwards;
 }
 
 @keyframes rotateCard {
@@ -33,10 +37,20 @@
         transform: rotateY(0deg);
     }
 }
-.animate-move-up {
-    animation: moveUp 0.6s ease-out forwards;
-}
 
 .animate-rotateCard {
     animation: rotateCard 0.6s ease-out forwards;
+}
+
+@keyframes translateUp {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-100%);
+    }
+}
+
+.animate-translateUp {
+    animation: translateUp 0.6s ease-out forwards;
 }
