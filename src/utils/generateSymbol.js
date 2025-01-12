@@ -1,15 +1,9 @@
 import { getRandomSymbol } from "./randomFunctions";
 
-export const generateSymbolCards = (
-    symbolsPerCard,
-    symbols,
-    setCounter,
-    setError
-) => {
+export const generateSymbolCards = (symbolsPerCard, symbols, setError) => {
     const n = symbolsPerCard - 1;
     const totalCards = n * n + n + 1;
     const randomSymbols = getRandomSymbol(totalCards, symbols);
-    setCounter(totalCards - 1);
 
     if (symbols.length < totalCards) {
         setError(true);

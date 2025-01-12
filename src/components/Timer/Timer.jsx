@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useStopwatch, useTimer } from "react-timer-hook";
 
 export default function Timer({
-    expiryTimestamp,
+    settings,
     isGameStarted,
     setGameStarted,
-    timerType,
+    setSettingsDisplayed,
 }) {
     const [countdown, setCountdown] = useState(3); // Compte à rebours de 3 secondes
     const [isCountingDown, setIsCountingDown] = useState(false);
@@ -17,7 +17,7 @@ export default function Timer({
         start: startTimer,
         restart: restartTimer,
     } = useTimer({
-        expiryTimestamp: expiryTimestamp * 60,
+        expiryTimestamp: settings.expiryTimestamp.value * 60,
         onExpire: () => setGameStarted(false),
     });
     const {
@@ -36,12 +36,14 @@ export default function Timer({
             setIsCountingDown(false);
             setGameStarted(true);
 
-            if (timerType === "timer") {
+            if (settings.timerType === "timer") {
                 const time = new Date();
-                time.setSeconds(time.getSeconds() + expiryTimestamp * 60);
+                time.setSeconds(
+                    time.getSeconds() + settings.expiryTimestamp.value * 60
+                );
                 restartTimer(time);
             }
-            if (timerType === "stopwatch") {
+            if (settings.timerType === "stopwatch") {
                 startStopwatch();
             }
         }
@@ -50,6 +52,9 @@ export default function Timer({
     const startCountdown = () => {
         setIsCountingDown(true);
         setCountdown(3); // Réinitialise le compte à rebours à 3 secondes
+        setSettingsDisplayed(false);
+
+        localStorage.setItem("settings", JSON.stringify(settings));
     };
 
     return (
@@ -67,9 +72,9 @@ export default function Timer({
                     <span>{countdown}</span>
                 </div>
             )}
-            {isGameStarted && timerType !== "" && (
+            {isGameStarted && settings.timerType !== "none" && (
                 <div className="text-7xl mb-4 flex justify-center gap-2">
-                    {timerType === "timer" && (
+                    {settings.timerType === "timer" && (
                         <>
                             {hoursTimer > 0 && (
                                 <>
@@ -91,7 +96,7 @@ export default function Timer({
                             </span>
                         </>
                     )}
-                    {timerType === "stopwatch" && (
+                    {settings.timerType === "stopwatch" && (
                         <>
                             {hoursStopwatch > 0 && (
                                 <>

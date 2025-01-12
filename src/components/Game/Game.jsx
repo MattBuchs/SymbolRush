@@ -8,6 +8,8 @@ import { handleCheckSymbol as handleCheckSymbolUtil } from "@/utils/handleCheckS
 import Settings from "../Settings/Settings";
 
 export default function Game({ setFictionalCard }) {
+    const localStorageSettings = JSON.parse(localStorage.getItem("settings"));
+
     const [cards, setCards] = useState([]);
     const [cardsDisplayed, setCardsDisplayed] = useState([]);
     const [symbols, setSymbols] = useState([]);
@@ -18,11 +20,25 @@ export default function Game({ setFictionalCard }) {
     const [animatedCard2, setAnimatedCard2] = useState(false);
     const [animatedStart, setAnimatedStart] = useState(false);
     const [gameStarted, setGameStarted] = useState(false);
+    const [settingsDisplayed, setSettingsDisplayed] = useState(true);
     const [settings, setSettings] = useState({
-        expiryTimestamp: { value: 1, min: 1, max: 60 },
-        timerType: "timer",
-        nbCards: { value: 57, min: 5, max: 57 },
-        nbSymbolPerCard: { value: 8, min: 3, max: 20, class: "text-[3rem]" },
+        expiryTimestamp: localStorageSettings?.expiryTimestamp || {
+            value: 1,
+            min: 1,
+            max: 60,
+        },
+        timerType: localStorageSettings?.timerType || "stopwatch",
+        nbCards: localStorageSettings?.nbCards || {
+            value: 57,
+            min: 5,
+            max: 57,
+        },
+        nbSymbolPerCard: localStorageSettings?.nbSymbolPerCard || {
+            value: 8,
+            min: 3,
+            max: 20,
+            class: "text-[3rem]",
+        },
     });
 
     const handleCheckSymbol = useCallback(
@@ -91,12 +107,11 @@ export default function Game({ setFictionalCard }) {
             if (!cardsGenerated) return;
 
             const shuffleCards = shuffle(cardsGenerated);
-            setCards(shuffleCards);
-            setCardsDisplayed([
-                shuffleCards[0],
-                shuffleCards[1],
-                shuffleCards[2],
-            ]);
+            const finalCards = shuffleCards.slice(0, settings.nbCards.value);
+
+            setCards(finalCards);
+            setCounter(finalCards.length - 1);
+            setCardsDisplayed([finalCards[0], finalCards[1], finalCards[2]]);
         }
     }, [gameStarted]);
 
@@ -166,14 +181,20 @@ export default function Game({ setFictionalCard }) {
             {symbols && symbols.length > 0 && settings.expiryTimestamp && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                     <Timer
+                        settings={settings}
                         expiryTimestamp={settings.expiryTimestamp.value}
                         isGameStarted={gameStarted}
                         setGameStarted={setGameStarted}
                         timerType={settings.timerType}
+                        setSettingsDisplayed={setSettingsDisplayed}
                     />
                 </div>
             )}
-            <Settings settings={settings} setSettings={setSettings} />
+            <Settings
+                settings={settings}
+                setSettings={setSettings}
+                isSettingsDisplayed={settingsDisplayed}
+            />
         </section>
     );
 }
